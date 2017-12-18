@@ -1,0 +1,151 @@
+#include <stdlib.h>
+#include <stdio.h>
+typedef struct {
+char* v;
+void* p;
+} chunk;
+typedef enum {false, true} bool;
+
+
+char* joinchunks(chunk* q) {
+chunk* qprev = NULL;
+chunk* q1 = q;
+char* c;
+char* s1;
+char* s2;
+while (q1 != NULL) {
+c = q1->v;
+if ((c[0] == '+') || (c[0] == '-')) {
+qprev->p = NULL;
+s1 = joinchunks(q);
+s2 = joinchunks((chunk*)q1->p);
+strcat(s1, " ");
+strcat(s1, s2);
+strcat(s1, " ");
+strcat(s1, c);
+strcat(s1, " ");
+return s1;
+}
+qprev = q1;
+q1 = (chunk*)q1->p;
+}
+q1 = q;
+while (q1 != NULL) {
+c = q1->v;
+if ((c[0] == '*') || (c[0] == '/')) {
+qprev->p = NULL;
+s1 = joinchunks(q);
+s2 = joinchunks((chunk*)q1->p);
+strcat(s1, " ");
+strcat(s1, s2);
+strcat(s1, " ");
+strcat(s1, c);
+strcat(s1, " ");
+return s1;
+}
+qprev = q1;
+q1 = (chunk*)q1->p;
+}
+return q->v;
+}
+
+
+bool notsignorblank(char c) {
+return (strchr("+-*/ ", c) == NULL);
+}
+
+char* postcalc2(char* s) {
+chunk* q0 = NULL;
+chunk* q1 = NULL;
+chunk* q2 = NULL;
+bool flg;
+int n = strlen(s);
+int i = 0;
+int j;
+int k;
+char* a = NULL;
+bool b;
+while (i < n) {
+flg = false;
+switch (s[i]) {
+case '+':
+case '-':
+case '*':
+case '/':
+q2 = (chunk*)malloc(sizeof(chunk));
+q2->v = (char*)malloc(2);
+q2->v[0] = s[i];
+q2->v[1] = 0;
+q2->p = NULL;
+flg = true;
+i++;
+break;
+case '(':
+j = i;
+b = true;
+k = 0;
+while ((i < n) && b) {
+i++;
+switch (s[i]) {
+case '(':
+k++;
+break;
+case ')':
+if (k > 0)
+k--;
+else
+{
+k = i - j; // длина того, что между скобками, плюс один.
+a = (char*)malloc(sizeof(char)*k);
+strncpy(a, s + j + 1, k - 1);
+a[k - 1] = 0;
+q2 = (chunk*)malloc(sizeof(chunk));
+q2->v = postcalc2(a);
+q2->p = NULL;
+flg = true;
+b = false;
+}
+break;
+}
+}
+case ' ':
+i++;
+break;
+default:
+j = i;
+while (notsignorblank(s[i]) && (i < n)) i++;
+q2 = (chunk*)malloc(sizeof(chunk));
+q2->v = (char*)malloc(sizeof(char)*(i - j + 1));
+strncpy(q2->v, s + j, i - j);
+q2->v[i - j] = 0;
+q2->p = NULL;
+flg = true;
+}
+if (flg) {
+if (q1 != NULL) {
+q1->p = q2;
+}
+else q0 = q2;
+q1 = q2;
+}
+}
+a = joinchunks(q0);
+/*	q1 = q0;
+while (q1 != NULL) {
+q2 = q1;
+q1 = (chunk*)q1->p;
+delete(q2->v);
+delete(q2);
+}*/
+return a;
+}
+
+int main()
+{
+char* S = "(4 + (7 * (55 - 21)) / 2) * (6 + 1)";
+printf("%s\n", postcalc2(S));
+
+
+system("pause");
+    return 0;
+}
